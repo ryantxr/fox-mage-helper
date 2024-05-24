@@ -1,8 +1,8 @@
 {
     "manifest_version": 2,
-    "name": "Mage Space Button Clicker",
+    "name": "Mage Space Helper",
     "version": "1.0",
-    "description": "An extension to click a button on mage.space.",
+    "description": "An extension to help with mage.space.",
     "permissions": [
       "activeTab",
       "storage",

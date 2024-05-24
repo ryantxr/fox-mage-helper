@@ -7,35 +7,82 @@ function clickButton() {
     }
     isProcessing = true;
 
+    // Remove all the models from local storage.
     browser.storage.local.remove('titles').then(() => {
         console.log('"titles" item removed from local storage');
     }).catch((error) => {
         console.error('Error removing item from local storage:', error);
     });
 
-    const spanElements = document.querySelectorAll('div.mage-Card-root div.mage-Stack-root span.mage-Button-inner span.mage-Button-label');
-    console.log('Searching for "Select Model" button...');
+    if ( !onModelSelectionModal() ) {
+        setTimeout(process(true), 1000);
+    } else {
+        process(false);
+    }
+    
+}
 
-    done = false;
-    for (let span of spanElements) {
-        if (span.textContent.includes("Select Model")) {
-            console.log('"Select Model" span found:', span);
-            const parentSpan = span.parentElement;
-            if (parentSpan && parentSpan.tagName.toLowerCase() === 'span') {
-                const button = parentSpan.parentElement;
-                if (! done && button && button.tagName.toLowerCase() === 'button' && button.classList.contains('mage-Button-root')) {
-                    button.click();
-                    done = true;
-                    console.log('Select Model button clicked');
-                    setTimeout(clickRecommendedButton, 2000); // Wait for the DOM to update after clicking the button
-                    return;
+function process(mustClickSelectModelButton) {
+    if ( mustClickSelectModelButton ) {
+        // Find the button to open the model selection modal
+        const spanElements = document.querySelectorAll('div.mage-Card-root div.mage-Stack-root span.mage-Button-inner span.mage-Button-label');
+        console.log('Searching for "Select Model" button...');
+        
+        done = false;
+        for (let span of spanElements) {
+            if (span.textContent.includes("Select Model")) {
+                console.log('"Select Model" span found:', span);
+                const parentSpan = span.parentElement;
+                if (parentSpan && parentSpan.tagName.toLowerCase() === 'span') {
+                    const button = parentSpan.parentElement;
+                    if (! done && button && button.tagName.toLowerCase() === 'button' && button.classList.contains('mage-Button-root')) {
+                        button.click();
+                        done = true;
+                        console.log('Select Model button clicked');
+                        setTimeout(clickRecommendedButton, 2000); // Wait for the DOM to update after clicking the button
+                        return;
+                    }
                 }
             }
         }
+    } else {
+        setTimeout(clickRecommendedButton, 100); // Wait for the DOM to update after clicking the button
     }
-
     console.log('Button not found');
     isProcessing = false;
+}
+
+// Are we on /build model select modal?
+// return true if we have to click the Select Model button on the build page.
+function onModelSelectionModal() {
+    if ( navigateToBuildPage() ) {
+        // we had to navigate to /build
+        // click the "Select Model" button
+        return false;
+    }
+    // We are already on /build
+    // See if the modal is active
+    const element = document.querySelector('div.mage-Modal-inner section.mage-Modal-content header button.mage-CloseButton-root');
+    if ( element ) {
+        // but the modal is active
+        // No need to click the model selection button
+        return true;
+    }
+    // click the "Select Model" button
+    return false;
+}
+
+// Function to navigate to the target URL
+function navigateToBuildPage() {
+    const buildUrl = '/build';
+    // Check if the current URL does not end with the buildUrl
+    if (!window.location.href.endsWith(buildUrl)) {
+        console.log("Navigate to the target URL");
+        window.location.href = buildUrl;
+        return true;
+    } 
+    // console.log('Already on the build page');
+    return false;
 }
 
 function clickRecommendedButton() {
@@ -52,9 +99,14 @@ function clickRecommendedButton() {
         for (let span of labelSpans) {
             if (span.textContent.trim() === "RECOMMENDED") {
                 console.log('Recommended button found:', button);
-                button.click();
-                console.log('Recommended button clicked');
-                setTimeout(gatherTitles, 2500); // Wait for the DOM to update after clicking the button
+                const variant = button.getAttribute('data-variant');
+                if (variant === 'white') {
+                    button.click();
+                    console.log('Recommended button clicked');
+                    setTimeout(gatherTitles, 2500); // Wait for the DOM to update after clicking the button
+                } else {
+                    setTimeout(gatherTitles, 100); // Wait for the DOM to update after clicking the button
+                }
                 return;
             }
         }
