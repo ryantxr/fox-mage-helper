@@ -1,5 +1,21 @@
 // popup.js
 document.addEventListener('DOMContentLoaded', () => {
+
+    const checkbox = document.getElementById('hideSidebarApps');
+
+    // Load the saved state of the checkbox
+    browser.storage.sync.get('hideSidebarApps').then(data => {
+      checkbox.checked = data.hideSidebarApps !== false; // default to true if not set
+    });
+  
+    // Save the state of the checkbox when it changes
+    checkbox.addEventListener('change', () => {
+      browser.storage.sync.set({ hideSidebarApps: checkbox.checked });
+      browser.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
+        browser.tabs.sendMessage(tabs[0].id, { action: 'toggleElements', hide: checkbox.checked });
+      });
+    });
+
     function updateTitles() {
         browser.storage.local.get('titles').then((result) => {
             const titles = result.titles || [];
